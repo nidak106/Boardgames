@@ -12,6 +12,9 @@ export default function App() {
   const [showLovePopup, setShowLovePopup] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
 
+  // 🆕 new
+  const [myPlayer, setMyPlayer] = useState(null); // 0 = Nida, 1 = Ivan
+
   const loadGame = async () => {
     const res = await axios.get(`${BASE_URL}/api/game`);
     setPlayerPositions(res.data.playerPositions);
@@ -45,8 +48,7 @@ export default function App() {
     for (let row = 0; row < 10; row++) {
       for (let col = 0; col < 10; col++) {
         const base = 100 - row * 10;
-        const cellNum =
-          row % 2 === 0 ? base - col : base - (9 - col);
+        const cellNum = row % 2 === 0 ? base - col : base - (9 - col);
 
         const isPlayer1 = playerPositions[0] === cellNum;
         const isPlayer2 = playerPositions[1] === cellNum;
@@ -119,8 +121,31 @@ export default function App() {
         </div>
       )}
 
+      {/* 🆕 Choose Player Popup */}
+      {gameStarted && myPlayer === null && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-60">
+          <div className="bg-white rounded-2xl shadow-lg p-6 w-80 text-center">
+            <h2 className="text-2xl font-bold mb-4">Choose Your Player</h2>
+            <div className="flex justify-center space-x-4">
+              <button
+                onClick={() => setMyPlayer(0)}
+                className="px-6 py-2 bg-pink-500 text-white rounded-xl hover:bg-pink-600"
+              >
+                Nida 💖
+              </button>
+              <button
+                onClick={() => setMyPlayer(1)}
+                className="px-6 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600"
+              >
+                Ivan 💙
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Game Section */}
-      {gameStarted && (
+      {gameStarted && myPlayer !== null && (
         <>
           <h1 className="text-3xl font-bold text-white drop-shadow-lg">
             🐍 Snake & Ladder 🎲
@@ -157,8 +182,8 @@ export default function App() {
           <div className="flex space-x-4">
             <button
               onClick={rollDice}
-              disabled={!!winner}
-              className="px-4 py-2 bg-green-500 text-white rounded-xl shadow hover:bg-green-600"
+              disabled={!!winner || myPlayer !== turn}
+              className="px-4 py-2 bg-green-500 text-white rounded-xl shadow hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Roll Dice
             </button>
