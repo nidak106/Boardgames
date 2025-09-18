@@ -2,16 +2,17 @@ import { useState } from "react";
 
 // 🐍 Match these to your image positions
 const snakes = {
-  16: 6,   // snake1 (bottom right area)
-  54: 26,  // snake3 (middle board)
-  82: 65,  // snake4 (top area)
-  88: 24   // snake2 (big diagonal one)
+  16: 5,   // snake1 (bottom right area)
+  57: 22,  // snake3 (middle board)
+  86: 66,  // snake4 (top area)
+  98: 27  ,
+  92:71 // snake2 (big diagonal one)
 };
 
 // 🪜 Match these to your image positions
 const ladders = {
-  13: 42,  
-  49: 79,  
+  13: 49,  
+  42: 79,  
   52: 71
 };
 
@@ -62,25 +63,38 @@ export default function App() {
   };
 
   const renderBoard = () => {
-    let cells = [];
-    for (let i = 100; i >= 1; i--) {
-      const isPlayer1 = playerPositions[0] === i;
-      const isPlayer2 = playerPositions[1] === i;
+    const cells = [];
+    for (let row = 0; row < 10; row++) {
+      const rowCells = [];
+      for (let col = 0; col < 10; col++) {
+        // Calculate cell number based on left-to-right pattern
+        const base = 100 - row * 10;
+        const cellNum =
+          row % 2 === 0
+            ? base - col // left-to-right for even rows
+            : base - (9 - col); // right-to-left for odd rows
 
-      cells.push(
-        <div
-          key={i}
-          className="flex items-center justify-center border text-xs relative h-12 w-12 bg-gradient-to-br from-yellow-100 to-yellow-200"
-        >
-          <span className="opacity-40">{i}</span>
-          {isPlayer1 && (
-            <img src="/player1.png" alt="Player 1" className="absolute w-12 h-12 z-10" />
-          )}
-          {isPlayer2 && (
-            <img src="/player2.png" alt="Player 2" className="absolute w-12 h-14 top-6 z-10" />
-          )}
-        </div>
-      );
+        const isPlayer1 = playerPositions[0] === cellNum;
+        const isPlayer2 = playerPositions[1] === cellNum;
+
+        rowCells.push(
+          <div
+            key={cellNum}
+            className="flex items-center justify-center border text-xs relative h-12 w-12 bg-gradient-to-br from-yellow-100 to-yellow-200"
+          >
+            <span className="opacity-40 absolute top-1 left-1">{cellNum}</span>
+            <div className="flex absolute bottom-0 left-0 w-full h-full justify-center items-end space-x-1">
+              {isPlayer1 && (
+                <img src="/player1.png" alt="Player 1" className="w-12 h-12 z-10" />
+              )}
+              {isPlayer2 && (
+                <img src="/player2.png" alt="Player 2" className="w-12 h-12 z-10" />
+              )}
+            </div>
+          </div>
+        );
+      }
+      cells.push(...rowCells);
     }
     return cells;
   };
@@ -130,7 +144,7 @@ export default function App() {
                   setShowLovePopup(false);
                   setGameStarted(true);
                 }}
-                className="px-6 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600"
+                className="px-6 py-2 bg-rose-300 text-white rounded-xl hover:bg-red-600"
               >
                 Yes
               </button>
@@ -163,7 +177,7 @@ export default function App() {
               src="/snake3.png"
               alt="Snake 2"
               className="absolute"
-              style={{ top: "45%", left: "40%", width: "28%", transform: "rotate(90deg)" }}
+              style={{ top: "45%", left: "10%", width: "28%", transform: "rotate(90deg)" }}
             />
             <img
               src="/snake4.png"
@@ -175,7 +189,13 @@ export default function App() {
               src="/snake2.png"
               alt="Snake 4"
               className="absolute"
-              style={{ top: "1%", left: "15%", width: "55%", transform: "rotate(-60deg)" }}
+              style={{ top: "-6%", left: "15%", width: "60%", transform: "rotate(-60deg)" }}
+            />
+            <img
+              src="/snake1.png"
+              alt="Snake 4"
+              className="absolute"
+              style={{ top: "8%", left: "77%", width: "25%", transform: "rotate(60deg)" }}
             />
 
             {/* Ladder images */}
@@ -205,9 +225,11 @@ export default function App() {
 
           <div className="flex items-center space-x-3">
             {dice && (
-              <span className="text-5xl">
-                {["⚀","⚁","⚂","⚃","⚄","⚅"][dice - 1]}
-              </span>
+              <img
+                src={`/dice${dice}.png`}
+                alt={`Dice ${dice}`}
+                className="w-12 h-12"
+              />
             )}
             <p className="text-xl text-white">Dice: {dice ?? "-"}</p>
           </div>
