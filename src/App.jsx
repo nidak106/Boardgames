@@ -1,83 +1,57 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import axios from "axios";
 
-// 🐍 Match these to your image positions
-const snakes = {
-  16: 5,   // snake1 (bottom right area)
-  57: 22,  // snake3 (middle board)
-  86: 66,  // snake4 (top area)
-  98: 27  ,
-  92:71 // snake2 (big diagonal one)
-};
-
-// 🪜 Match these to your image positions
-const ladders = {
-  13: 49,  
-  42: 79,  
-  52: 71
-};
+const BASE_URL = "https://baordgame-backend-production.up.railway.app";
 
 export default function App() {
   const [playerPositions, setPlayerPositions] = useState([1, 1]);
   const [turn, setTurn] = useState(0);
   const [dice, setDice] = useState(null);
+  const [winner, setWinner] = useState(null);
   const [showIntro, setShowIntro] = useState(true);
   const [showLovePopup, setShowLovePopup] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
 
-  const rollDice = () => {
-    const roll = Math.floor(Math.random() * 6) + 1;
-    setDice(roll);
-
-    setPlayerPositions((prev) => {
-      const newPositions = [...prev];
-      let nextPos = newPositions[turn] + roll;
-
-      if (nextPos <= 100) {
-        // show the new square first
-        newPositions[turn] = nextPos;
-
-        const snakeTarget = snakes[nextPos];
-        const ladderTarget = ladders[nextPos];
-
-        if (snakeTarget || ladderTarget) {
-          setTimeout(() => {
-            setPlayerPositions((prev2) => {
-              const updated = [...prev2];
-              updated[turn] = snakeTarget || ladderTarget;
-              return updated;
-            });
-          }, 800); // delay so it doesn't "disappear"
-        }
-      }
-
-      return newPositions;
-    });
-
-    setTurn((prev) => (prev === 0 ? 1 : 0));
+  const loadGame = async () => {
+    const res = await axios.get(`${BASE_URL}/api/game`);
+    setPlayerPositions(res.data.playerPositions);
+    setTurn(res.data.turn);
+    setDice(res.data.dice);
+    setWinner(res.data.winner);
   };
 
-  const resetGame = () => {
-    setPlayerPositions([1, 1]);
-    setTurn(0);
-    setDice(null);
+  useEffect(() => {
+    loadGame();
+  }, []);
+
+  const rollDice = async () => {
+    const res = await axios.post(`${BASE_URL}/api/roll`);
+    setPlayerPositions(res.data.playerPositions);
+    setTurn(res.data.turn);
+    setDice(res.data.dice);
+    setWinner(res.data.winner);
+  };
+
+  const resetGame = async () => {
+    const res = await axios.post(`${BASE_URL}/api/reset`);
+    setPlayerPositions(res.data.playerPositions);
+    setTurn(res.data.turn);
+    setDice(res.data.dice);
+    setWinner(res.data.winner);
   };
 
   const renderBoard = () => {
     const cells = [];
     for (let row = 0; row < 10; row++) {
-      const rowCells = [];
       for (let col = 0; col < 10; col++) {
-        // Calculate cell number based on left-to-right pattern
         const base = 100 - row * 10;
         const cellNum =
-          row % 2 === 0
-            ? base - col // left-to-right for even rows
-            : base - (9 - col); // right-to-left for odd rows
+          row % 2 === 0 ? base - col : base - (9 - col);
 
         const isPlayer1 = playerPositions[0] === cellNum;
         const isPlayer2 = playerPositions[1] === cellNum;
 
-        rowCells.push(
+        cells.push(
           <div
             key={cellNum}
             className="flex items-center justify-center border text-xs relative h-12 w-12 bg-gradient-to-br from-yellow-100 to-yellow-200"
@@ -94,17 +68,9 @@ export default function App() {
           </div>
         );
       }
-      cells.push(...rowCells);
     }
     return cells;
   };
-
-  const winner =
-    playerPositions[0] === 100
-      ? "Nida Wins 🎉"
-      : playerPositions[1] === 100
-      ? "Ivan Wins 🎉"
-      : null;
 
   return (
     <div className="flex flex-col items-center p-6 space-y-6 bg-gradient-to-r from-purple-300 to-pink-300 min-h-screen">
@@ -160,63 +126,23 @@ export default function App() {
             🐍 Snake & Ladder 🎲
           </h1>
 
-          {/* Board with snakes/ladders */}
+          {/* Board */}
           <div className="relative">
             <div className="grid grid-cols-10 border-4 border-yellow-600 rounded-lg shadow-lg">
               {renderBoard()}
             </div>
 
             {/* Snake images */}
-            <img
-              src="/snake1.png"
-              alt="Snake 1"
-              className="absolute"
-              style={{ top: "83%", left: "40%", width: "16%", transform: "rotate(70deg)" }}
-            />
-            <img
-              src="/snake3.png"
-              alt="Snake 2"
-              className="absolute"
-              style={{ top: "45%", left: "10%", width: "28%", transform: "rotate(90deg)" }}
-            />
-            <img
-              src="/snake4.png"
-              alt="Snake 3"
-              className="absolute"
-              style={{ top: "10%", left: "50%", width: "30%", transform: "rotate(0deg)" }}
-            />
-            <img
-              src="/snake2.png"
-              alt="Snake 4"
-              className="absolute"
-              style={{ top: "-6%", left: "15%", width: "60%", transform: "rotate(-60deg)" }}
-            />
-            <img
-              src="/snake1.png"
-              alt="Snake 4"
-              className="absolute"
-              style={{ top: "8%", left: "77%", width: "25%", transform: "rotate(60deg)" }}
-            />
+            <img src="/snake1.png" className="absolute" style={{ top: "83%", left: "40%", width: "16%", transform: "rotate(70deg)" }} />
+            <img src="/snake3.png" className="absolute" style={{ top: "45%", left: "10%", width: "28%", transform: "rotate(90deg)" }} />
+            <img src="/snake4.png" className="absolute" style={{ top: "10%", left: "50%", width: "30%" }} />
+            <img src="/snake2.png" className="absolute" style={{ top: "-6%", left: "15%", width: "60%", transform: "rotate(-60deg)" }} />
+            <img src="/snake1.png" className="absolute" style={{ top: "8%", left: "77%", width: "25%", transform: "rotate(60deg)" }} />
 
             {/* Ladder images */}
-            <img
-              src="/ladder1.png"
-              alt="Ladder 1"
-              className="absolute"
-              style={{ top: "22%", left: "85%", width: "8%", transform: "rotate(30deg)" }}
-            />
-            <img
-              src="/ladder1.png"
-              alt="Ladder 2"
-              className="absolute"
-              style={{ top: "57%", left: "75%", width: "10%", transform: "rotate(25deg)" }}
-            />
-            <img
-              src="/ladder1.png"
-              alt="Ladder 3"
-              className="absolute"
-              style={{ top: "28%", left: "10%", width: "10%", transform: "rotate(-6deg)" }}
-            />
+            <img src="/ladder1.png" className="absolute" style={{ top: "22%", left: "85%", width: "8%", transform: "rotate(30deg)" }} />
+            <img src="/ladder1.png" className="absolute" style={{ top: "57%", left: "75%", width: "10%", transform: "rotate(25deg)" }} />
+            <img src="/ladder1.png" className="absolute" style={{ top: "28%", left: "10%", width: "10%", transform: "rotate(-6deg)" }} />
           </div>
 
           <p className="text-lg text-white drop-shadow-md">
@@ -224,13 +150,7 @@ export default function App() {
           </p>
 
           <div className="flex items-center space-x-3">
-            {dice && (
-              <img
-                src={`/dice${dice}.png`}
-                alt={`Dice ${dice}`}
-                className="w-12 h-12"
-              />
-            )}
+            {dice && <img src={`/dice${dice}.png`} alt={`Dice ${dice}`} className="w-12 h-12" />}
             <p className="text-xl text-white">Dice: {dice ?? "-"}</p>
           </div>
 
