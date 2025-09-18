@@ -1,9 +1,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
-import { io } from "socket.io-client"; // 🆕 socket
 
 const BASE_URL = "https://baordgame-backend-production.up.railway.app";
-const socket = io(BASE_URL); // 🆕 connect to backend
 
 export default function App() {
   const [playerPositions, setPlayerPositions] = useState([1, 1]);
@@ -13,6 +11,8 @@ export default function App() {
   const [showIntro, setShowIntro] = useState(true);
   const [showLovePopup, setShowLovePopup] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
+
+  // 🆕 new
   const [myPlayer, setMyPlayer] = useState(null); // 0 = Nida, 1 = Ivan
 
   const loadGame = async () => {
@@ -25,28 +25,22 @@ export default function App() {
 
   useEffect(() => {
     loadGame();
-
-    // 🆕 Listen for realtime game updates
-    socket.on("gameUpdated", (data) => {
-      setPlayerPositions(data.playerPositions);
-      setTurn(data.turn);
-      setDice(data.dice);
-      setWinner(data.winner);
-    });
-
-    return () => {
-      socket.off("gameUpdated");
-    };
   }, []);
 
   const rollDice = async () => {
-    await axios.post(`${BASE_URL}/api/roll`);
-    // no need to manually set state, socket will update it
+    const res = await axios.post(`${BASE_URL}/api/roll`);
+    setPlayerPositions(res.data.playerPositions);
+    setTurn(res.data.turn);
+    setDice(res.data.dice);
+    setWinner(res.data.winner);
   };
 
   const resetGame = async () => {
-    await axios.post(`${BASE_URL}/api/reset`);
-    // state will be updated via socket
+    const res = await axios.post(`${BASE_URL}/api/reset`);
+    setPlayerPositions(res.data.playerPositions);
+    setTurn(res.data.turn);
+    setDice(res.data.dice);
+    setWinner(res.data.winner);
   };
 
   const renderBoard = () => {
@@ -83,19 +77,97 @@ export default function App() {
   return (
     <div className="flex flex-col items-center p-6 space-y-6 bg-gradient-to-r from-purple-300 to-pink-300 min-h-screen">
 
-      {/* ... your intro / love popups ... */}
+      {/* Intro Popup */}
+      {showIntro && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-60">
+          <div className="bg-white rounded-2xl shadow-lg p-6 w-80 text-center">
+            <h2 className="text-2xl font-bold mb-4">🎲 Ivan & Nida's Board Game 🎲</h2>
+            <button
+              onClick={() => {
+                setShowIntro(false);
+                setShowLovePopup(true);
+              }}
+              className="px-6 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600"
+            >
+              Play
+            </button>
+          </div>
+        </div>
+      )}
 
+      {/* Love Popup */}
+      {showLovePopup && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-60">
+          <div className="bg-white rounded-2xl shadow-lg p-6 w-80 text-center">
+            <h2 className="text-2xl font-bold mb-4">❤ Do you love Nida? ❤</h2>
+            <div className="flex justify-center space-x-4">
+              <button
+                onClick={() => setShowLovePopup(false)}
+                className="px-6 py-2 bg-gray-400 text-white rounded-xl hover:bg-gray-500"
+              >
+                No
+              </button>
+              <button
+                onClick={() => {
+                  setShowLovePopup(false);
+                  setGameStarted(true);
+                }}
+                className="px-6 py-2 bg-rose-300 text-white rounded-xl hover:bg-red-600"
+              >
+                Yes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 🆕 Choose Player Popup */}
+      {gameStarted && myPlayer === null && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-60">
+          <div className="bg-white rounded-2xl shadow-lg p-6 w-80 text-center">
+            <h2 className="text-2xl font-bold mb-4">Choose Your Player</h2>
+            <div className="flex justify-center space-x-4">
+              <button
+                onClick={() => setMyPlayer(0)}
+                className="px-6 py-2 bg-pink-500 text-white rounded-xl hover:bg-pink-600"
+              >
+                Nida 💖
+              </button>
+              <button
+                onClick={() => setMyPlayer(1)}
+                className="px-6 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600"
+              >
+                Ivan 💙
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Game Section */}
       {gameStarted && myPlayer !== null && (
         <>
           <h1 className="text-3xl font-bold text-white drop-shadow-lg">
             🐍 Snake & Ladder 🎲
           </h1>
 
+          {/* Board */}
           <div className="relative">
             <div className="grid grid-cols-10 border-4 border-yellow-600 rounded-lg shadow-lg">
               {renderBoard()}
             </div>
-            {/* snake + ladder images */}
+
+            {/* Snake images */}
+            <img src="/snake1.png" className="absolute" style={{ top: "83%", left: "40%", width: "16%", transform: "rotate(70deg)" }} />
+            <img src="/snake3.png" className="absolute" style={{ top: "45%", left: "10%", width: "28%", transform: "rotate(90deg)" }} />
+            <img src="/snake4.png" className="absolute" style={{ top: "10%", left: "50%", width: "30%" }} />
+            <img src="/snake2.png" className="absolute" style={{ top: "-6%", left: "15%", width: "60%", transform: "rotate(-60deg)" }} />
+            <img src="/snake1.png" className="absolute" style={{ top: "8%", left: "77%", width: "25%", transform: "rotate(60deg)" }} />
+
+            {/* Ladder images */}
+            <img src="/ladder1.png" className="absolute" style={{ top: "22%", left: "85%", width: "8%", transform: "rotate(30deg)" }} />
+            <img src="/ladder1.png" className="absolute" style={{ top: "57%", left: "75%", width: "10%", transform: "rotate(25deg)" }} />
+            <img src="/ladder1.png" className="absolute" style={{ top: "28%", left: "10%", width: "10%", transform: "rotate(-6deg)" }} />
           </div>
 
           <p className="text-lg text-white drop-shadow-md">
