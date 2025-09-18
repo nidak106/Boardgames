@@ -22,10 +22,15 @@ export default function App() {
     setDice(res.data.dice);
     setWinner(res.data.winner);
   };
+useEffect(() => {
+  loadGame(); // initial load
 
-  useEffect(() => {
+  const interval = setInterval(() => {
     loadGame();
-  }, []);
+  }, 3000); // refresh every 3 seconds
+
+  return () => clearInterval(interval); // cleanup when component unmounts
+}, []);
 
   const rollDice = async () => {
     const res = await axios.post(`${BASE_URL}/api/roll`);
